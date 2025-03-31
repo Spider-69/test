@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*">
+<meta http-equiv="Access-Control-Allow-Methods" content="GET, POST, OPTIONS">
+<meta http-equiv="Access-Control-Allow-Headers" content="Content-Type, Authorization">
+<meta http-equiv="Access-Control-Allow-Credentials" content="true">
     <title>File Upload Service</title>
     <style>
         body {
@@ -94,15 +98,6 @@
             color: #555;
         }
 
-        .url-input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-
         button {
             background-color: #4caf50;
             color: white;
@@ -191,6 +186,42 @@
             margin: 10px 0;
             color: #666;
         }
+
+        #manual-instructions {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #fff9e6;
+            border: 1px solid #ffe0b2;
+            border-radius: 5px;
+            text-align: left;
+        }
+
+        #manual-instructions code {
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        #manual-instructions ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+
+        #manual-file {
+            margin: 10px 0;
+        }
+
+        .manual-upload-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .manual-upload-container h3 {
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
@@ -209,13 +240,37 @@
         
         <div id="file-info" class="file-info hidden"></div>
         
-        <form id="manual-form" action="https://i.rj1.dev/upload" method="POST" enctype="multipart/form-data" target="upload-iframe" class="hidden">
-            <input type="file" id="manual-file-input" name="image">
-            <button type="submit">Upload</button>
-        </form>
-        <iframe id="upload-iframe" name="upload-iframe" class="hidden"></iframe>
+        <div id="manual-upload" class="manual-upload-container hidden">
+            <h3>Manual Upload</h3>
+            <p>Due to browser security restrictions, please follow these steps:</p>
+            <ol>
+                <li>Click the button below to download the file:</li>
+                <div>
+                    <button id="download-btn">Download Selected File</button>
+                </div>
+                <li>Open <a href="https://i.rj1.dev" target="_blank">i.rj1.dev</a> in a new tab</li>
+                <li>Upload the downloaded file</li>
+                <li>Copy the direct URL and paste it below:</li>
+                <div>
+                    <input type="text" id="manual-url-input" placeholder="Paste the direct URL here" style="width: 100%; padding: 8px; margin: 10px 0;">
+                    <button id="set-url-btn">Set URL</button>
+                </div>
+            </ol>
+        </div>
         
-        <button id="direct-upload-btn" class="hidden">Upload Selected File</button>
+        <div id="curl-instructions" class="manual-upload-container hidden">
+            <h3>cURL Command</h3>
+            <p>You can also upload using this cURL command:</p>
+            <div>
+                <textarea id="curl-command" style="width: 100%; padding: 8px; height: 60px; margin: 10px 0;" readonly></textarea>
+                <button id="copy-curl-btn">Copy Command</button>
+            </div>
+            <p>After running the command, paste the returned URL below:</p>
+            <div>
+                <input type="text" id="curl-url-input" placeholder="Paste the direct URL here" style="width: 100%; padding: 8px; margin: 10px 0;">
+                <button id="set-curl-url-btn">Set URL</button>
+            </div>
+        </div>
         
         <div id="status" class="status hidden"></div>
         
@@ -232,16 +287,22 @@
             const uploadArea = document.getElementById('upload-area');
             const fileInput = document.getElementById('file-input');
             const fileInfo = document.getElementById('file-info');
-            const manualForm = document.getElementById('manual-form');
-            const manualFileInput = document.getElementById('manual-file-input');
-            const directUploadBtn = document.getElementById('direct-upload-btn');
+            const manualUpload = document.getElementById('manual-upload');
             const status = document.getElementById('status');
             const result = document.getElementById('result');
             const resultLink = document.getElementById('result-link');
             const copyBtn = document.getElementById('copy-btn');
-            const uploadIframe = document.getElementById('upload-iframe');
+            const downloadBtn = document.getElementById('download-btn');
+            const manualUrlInput = document.getElementById('manual-url-input');
+            const setUrlBtn = document.getElementById('set-url-btn');
+            const curlInstructions = document.getElementById('curl-instructions');
+            const curlCommand = document.getElementById('curl-command');
+            const copyCurlBtn = document.getElementById('copy-curl-btn');
+            const curlUrlInput = document.getElementById('curl-url-input');
+            const setCurlUrlBtn = document.getElementById('set-curl-url-btn');
             
             let selectedFile = null;
+            let objectUrl = null;
             
             // Handle drag and drop events
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -292,55 +353,49 @@
                 }
             });
             
-            directUploadBtn.addEventListener('click', function() {
-                if (selectedFile) {
-                    // Set the file to the manual form input and submit the form
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(selectedFile);
-                    manualFileInput.files = dataTransfer.files;
-                    manualForm.submit();
-                    
-                    showStatus('<div class="loading"></div> Uploading via form submission...', '');
+            // Download button functionality
+            downloadBtn.addEventListener('click', function() {
+                if (objectUrl) {
+                    const a = document.createElement('a');
+                    a.href = objectUrl;
+                    a.download = selectedFile.name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
                 }
             });
             
-            // Listen for messages from the iframe
-            window.addEventListener('message', function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.success) {
-                        showResult(data.direct_url);
-                        showStatus('Upload successful!', 'success');
-                    } else {
-                        showStatus('Upload failed: ' + (data.message || 'Unknown error'), 'error');
-                    }
-                } catch (e) {
-                    // Not a JSON message or other error
-                    console.log('Received non-JSON message from iframe:', event.data);
+            // Set URL button functionality
+            setUrlBtn.addEventListener('click', function() {
+                const url = manualUrlInput.value.trim();
+                if (url) {
+                    showResult(url);
+                    showStatus('URL set successfully!', 'success');
+                } else {
+                    showStatus('Please enter a valid URL', 'error');
                 }
             });
             
-            // Handle iframe load
-            uploadIframe.addEventListener('load', function() {
-                try {
-                    const iframeContent = uploadIframe.contentWindow.document.body.textContent;
-                    if (iframeContent) {
-                        try {
-                            const data = JSON.parse(iframeContent);
-                            if (data.success) {
-                                showResult(data.direct_url);
-                                showStatus('Upload successful!', 'success');
-                            } else {
-                                showStatus('Upload failed: ' + (data.message || 'Unknown error'), 'error');
-                            }
-                        } catch (e) {
-                            console.log('Failed to parse JSON from iframe response');
-                        }
-                    }
-                } catch (e) {
-                    // Cross-origin errors might occur here
-                    console.log('Could not access iframe content due to cross-origin policy');
+            // Set cURL URL button functionality
+            setCurlUrlBtn.addEventListener('click', function() {
+                const url = curlUrlInput.value.trim();
+                if (url) {
+                    showResult(url);
+                    showStatus('URL set successfully!', 'success');
+                } else {
+                    showStatus('Please enter a valid URL', 'error');
                 }
+            });
+            
+            // Copy cURL command functionality
+            copyCurlBtn.addEventListener('click', function() {
+                curlCommand.select();
+                document.execCommand('copy');
+                copyCurlBtn.textContent = 'Copied!';
+                
+                setTimeout(() => {
+                    copyCurlBtn.textContent = 'Copy Command';
+                }, 2000);
             });
             
             // Copy button functionality
@@ -361,8 +416,19 @@
                 fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
                 fileInfo.classList.remove('hidden');
                 
-                // Show upload button
-                directUploadBtn.classList.remove('hidden');
+                // Create object URL for download
+                if (objectUrl) {
+                    URL.revokeObjectURL(objectUrl);
+                }
+                objectUrl = URL.createObjectURL(file);
+                
+                // Show manual upload instructions
+                manualUpload.classList.remove('hidden');
+                
+                // Generate cURL command
+                const curlCmd = `curl -X POST https://i.rj1.dev/upload -F "image=@/path/to/${file.name}"`;
+                curlCommand.value = curlCmd;
+                curlInstructions.classList.remove('hidden');
             }
             
             function formatFileSize(bytes) {
@@ -381,44 +447,6 @@
                 resultLink.value = url;
                 result.classList.remove('hidden');
             }
-
-            // Set up the manual form submission proxy
-            // This script attempts to intercept the JSON response in the hidden iframe
-            const script = document.createElement('script');
-            script.textContent = `
-                // Function to inject into iframe to extract response
-                function injectFrameListener() {
-                    try {
-                        const iframe = document.getElementById('upload-iframe');
-                        if (!iframe) return;
-                        
-                        iframe.onload = function() {
-                            try {
-                                const iframeDocument = iframe.contentWindow.document;
-                                const responseText = iframeDocument.body.textContent;
-                                
-                                if (responseText) {
-                                    try {
-                                        const responseData = JSON.parse(responseText);
-                                        window.parent.postMessage(JSON.stringify(responseData), '*');
-                                    } catch (e) {
-                                        console.error('Failed to parse JSON response', e);
-                                    }
-                                }
-                            } catch (e) {
-                                console.error('Error accessing iframe content', e);
-                            }
-                        };
-                    } catch (e) {
-                        console.error('Error setting up iframe listener', e);
-                    }
-                }
-                
-                // Call immediately and also after a slight delay to ensure it runs
-                injectFrameListener();
-                setTimeout(injectFrameListener, 500);
-            `;
-            document.head.appendChild(script);
         });
     </script>
 </body>
