@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Access-Control-Allow-Origin" content="*">
-<meta http-equiv="Access-Control-Allow-Methods" content="GET, POST, OPTIONS">
-<meta http-equiv="Access-Control-Allow-Headers" content="Content-Type, Authorization">
-<meta http-equiv="Access-Control-Allow-Credentials" content="true">
+    <meta http-equiv="Access-Control-Allow-Methods" content="GET, POST, OPTIONS">
+    <meta http-equiv="Access-Control-Allow-Headers" content="Content-Type, Authorization">
+    <meta http-equiv="Access-Control-Allow-Credentials" content="true">
     <title>File Upload Service</title>
     <style>
         body {
@@ -98,6 +99,15 @@
             color: #555;
         }
 
+        .url-input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
         button {
             background-color: #4caf50;
             color: white;
@@ -181,47 +191,6 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
-        .file-info {
-            margin: 10px 0;
-            color: #666;
-        }
-
-        #manual-instructions {
-            margin: 20px 0;
-            padding: 15px;
-            background-color: #fff9e6;
-            border: 1px solid #ffe0b2;
-            border-radius: 5px;
-            text-align: left;
-        }
-
-        #manual-instructions code {
-            background-color: #f5f5f5;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
-
-        #manual-instructions ol {
-            margin: 10px 0;
-            padding-left: 25px;
-        }
-
-        #manual-file {
-            margin: 10px 0;
-        }
-
-        .manual-upload-container {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            margin-top: 20px;
-        }
-
-        .manual-upload-container h3 {
-            margin-top: 0;
-        }
     </style>
 </head>
 <body>
@@ -238,38 +207,9 @@
             <input type="file" id="file-input" class="hidden">
         </div>
         
-        <div id="file-info" class="file-info hidden"></div>
-        
-        <div id="manual-upload" class="manual-upload-container hidden">
-            <h3>Manual Upload</h3>
-            <p>Due to browser security restrictions, please follow these steps:</p>
-            <ol>
-                <li>Click the button below to download the file:</li>
-                <div>
-                    <button id="download-btn">Download Selected File</button>
-                </div>
-                <li>Open <a href="https://i.rj1.dev" target="_blank">i.rj1.dev</a> in a new tab</li>
-                <li>Upload the downloaded file</li>
-                <li>Copy the direct URL and paste it below:</li>
-                <div>
-                    <input type="text" id="manual-url-input" placeholder="Paste the direct URL here" style="width: 100%; padding: 8px; margin: 10px 0;">
-                    <button id="set-url-btn">Set URL</button>
-                </div>
-            </ol>
-        </div>
-        
-        <div id="curl-instructions" class="manual-upload-container hidden">
-            <h3>cURL Command</h3>
-            <p>You can also upload using this cURL command:</p>
-            <div>
-                <textarea id="curl-command" style="width: 100%; padding: 8px; height: 60px; margin: 10px 0;" readonly></textarea>
-                <button id="copy-curl-btn">Copy Command</button>
-            </div>
-            <p>After running the command, paste the returned URL below:</p>
-            <div>
-                <input type="text" id="curl-url-input" placeholder="Paste the direct URL here" style="width: 100%; padding: 8px; margin: 10px 0;">
-                <button id="set-curl-url-btn">Set URL</button>
-            </div>
+        <div class="url-upload">
+            <input type="text" id="url-input" class="url-input" placeholder="Or enter a URL to upload from">
+            <button id="url-upload-btn">Upload via URL</button>
         </div>
         
         <div id="status" class="status hidden"></div>
@@ -286,23 +226,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             const uploadArea = document.getElementById('upload-area');
             const fileInput = document.getElementById('file-input');
-            const fileInfo = document.getElementById('file-info');
-            const manualUpload = document.getElementById('manual-upload');
+            const urlInput = document.getElementById('url-input');
+            const urlUploadBtn = document.getElementById('url-upload-btn');
             const status = document.getElementById('status');
             const result = document.getElementById('result');
             const resultLink = document.getElementById('result-link');
             const copyBtn = document.getElementById('copy-btn');
-            const downloadBtn = document.getElementById('download-btn');
-            const manualUrlInput = document.getElementById('manual-url-input');
-            const setUrlBtn = document.getElementById('set-url-btn');
-            const curlInstructions = document.getElementById('curl-instructions');
-            const curlCommand = document.getElementById('curl-command');
-            const copyCurlBtn = document.getElementById('copy-curl-btn');
-            const curlUrlInput = document.getElementById('curl-url-input');
-            const setCurlUrlBtn = document.getElementById('set-curl-url-btn');
-            
-            let selectedFile = null;
-            let objectUrl = null;
             
             // Handle drag and drop events
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -338,7 +267,7 @@
                 const files = dt.files;
                 
                 if (files.length) {
-                    setSelectedFile(files[0]);
+                    handleFiles(files[0]);
                 }
             }
             
@@ -349,53 +278,19 @@
             
             fileInput.addEventListener('change', function() {
                 if (fileInput.files.length) {
-                    setSelectedFile(fileInput.files[0]);
+                    handleFiles(fileInput.files[0]);
                 }
             });
             
-            // Download button functionality
-            downloadBtn.addEventListener('click', function() {
-                if (objectUrl) {
-                    const a = document.createElement('a');
-                    a.href = objectUrl;
-                    a.download = selectedFile.name;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                }
-            });
-            
-            // Set URL button functionality
-            setUrlBtn.addEventListener('click', function() {
-                const url = manualUrlInput.value.trim();
-                if (url) {
-                    showResult(url);
-                    showStatus('URL set successfully!', 'success');
-                } else {
-                    showStatus('Please enter a valid URL', 'error');
-                }
-            });
-            
-            // Set cURL URL button functionality
-            setCurlUrlBtn.addEventListener('click', function() {
-                const url = curlUrlInput.value.trim();
-                if (url) {
-                    showResult(url);
-                    showStatus('URL set successfully!', 'success');
-                } else {
-                    showStatus('Please enter a valid URL', 'error');
-                }
-            });
-            
-            // Copy cURL command functionality
-            copyCurlBtn.addEventListener('click', function() {
-                curlCommand.select();
-                document.execCommand('copy');
-                copyCurlBtn.textContent = 'Copied!';
+            // Handle URL upload
+            urlUploadBtn.addEventListener('click', function() {
+                const url = urlInput.value.trim();
                 
-                setTimeout(() => {
-                    copyCurlBtn.textContent = 'Copy Command';
-                }, 2000);
+                if (url) {
+                    uploadViaUrl(url);
+                } else {
+                    showStatus('Please enter a valid URL', 'error');
+                }
             });
             
             // Copy button functionality
@@ -409,32 +304,40 @@
                 }, 2000);
             });
             
-            function setSelectedFile(file) {
-                selectedFile = file;
-                
-                // Display file info
-                fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
-                fileInfo.classList.remove('hidden');
-                
-                // Create object URL for download
-                if (objectUrl) {
-                    URL.revokeObjectURL(objectUrl);
-                }
-                objectUrl = URL.createObjectURL(file);
-                
-                // Show manual upload instructions
-                manualUpload.classList.remove('hidden');
-                
-                // Generate cURL command
-                const curlCmd = `curl -X POST https://i.rj1.dev/upload -F "image=@/path/to/${file.name}"`;
-                curlCommand.value = curlCmd;
-                curlInstructions.classList.remove('hidden');
+            function handleFiles(file) {
+                uploadFile(file);
             }
             
-            function formatFileSize(bytes) {
-                if (bytes < 1024) return bytes + ' bytes';
-                else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-                else return (bytes / 1048576).toFixed(1) + ' MB';
+            function uploadFile(file) {
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                showStatus('<div class="loading"></div> Uploading...', '');
+                
+                // Replace with your API endpoint
+                fetch('https://i.rj1.dev/upload', {
+                    method: 'POST',
+                    body: formData,
+                    // Removed CORS headers as you mentioned they're causing issues
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showResult(data.direct_url);
+                        showStatus('Upload successful!', 'success');
+                    } else {
+                        showStatus('Upload failed: ' + (data.message || 'Unknown error'), 'error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('Upload failed: ' + error.message, 'error');
+                });
+            }
+            
+            function uploadViaUrl(url) {
+                // This function would be implemented if your API supports URL uploads
+                // For now, showing an error message
+                showStatus('URL upload is not implemented yet', 'error');
             }
             
             function showStatus(message, type) {
