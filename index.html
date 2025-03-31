@@ -3,240 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Uploader</title>
+    <title>File Upload Service</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
+            background-color: #f5f5f5;
+            background-image: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee),
+                            linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
             margin: 0;
             padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
         }
+
         .container {
+            max-width: 600px;
             width: 90%;
-            max-width: 700px;
-            margin: 40px auto;
+            text-align: center;
             background-color: white;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
-            text-align: center;
+            margin: 20px 0;
         }
+
         .logo {
             margin-bottom: 20px;
-        }
-        .logo img {
-            height: 60px;
-        }
-        h1 {
             font-size: 32px;
-            margin-bottom: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+
+        .box-icon {
+            width: 60px;
+            height: 60px;
+            background-color: #b19a6b;
+            border-radius: 5px;
+            display: inline-block;
+            position: relative;
+            margin-left: 10px;
+        }
+
+        .box-icon:before, .box-icon:after {
+            content: '';
+            position: absolute;
+            background-color: white;
+            width: 15px;
+            height: 10px;
+            border-radius: 5px;
+            bottom: -5px;
+        }
+
+        .box-icon:before {
+            left: -5px;
+        }
+
+        .box-icon:after {
+            right: -5px;
+        }
+
         .upload-area {
             border: 2px dashed #ccc;
-            border-radius: 5px;
             padding: 40px 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
             cursor: pointer;
-            margin: 20px 0;
-            background-color: #e9f0f5;
             transition: all 0.3s;
-        }
-        .upload-area:hover {
-            border-color: #007bff;
-            background-color: #f0f7ff;
-        }
-        .upload-area.highlight {
-            border-color: #007bff;
-            background-color: #f0f7ff;
-        }
-        .upload-text {
-            font-size: 18px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-        #fileInput {
-            display: none;
-        }
-        .btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .btn:hover {
-            background-color: #0069d9;
-        }
-        .result-container {
-            margin-top: 20px;
-            display: none;
-        }
-        .link-container {
-            display: flex;
-            margin: 15px 0;
-        }
-        .link-input {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px 0 0 5px;
-            font-size: 16px;
-        }
-        .copy-btn {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 0 5px 5px 0;
-            padding: 10px 15px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .copy-btn:hover {
-            background-color: #218838;
-        }
-        .status {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .loading {
-            display: none;
             margin: 20px 0;
         }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #007bff;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
+
+        .upload-area:hover {
+            border-color: #999;
+            background-color: #f0f0f0;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        .upload-area.active {
+            border-color: #4caf50;
+            background-color: #e8f5e9;
         }
-        .footer {
+
+        .info {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #388e3c;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .result {
             margin-top: 20px;
-            color: #666;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f0f9ff;
+            border: 1px solid #d0e8ff;
+            word-break: break-all;
+        }
+
+        .copy-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .copy-link input {
+            flex-grow: 1;
+            border: none;
+            background: transparent;
+            outline: none;
+            margin-right: 10px;
+        }
+
+        .copy-btn {
+            background-color: #2196F3;
+            padding: 5px 10px;
             font-size: 14px;
         }
-        .preview {
-            max-width: 300px;
-            max-height: 200px;
-            margin: 10px auto;
-            border-radius: 5px;
-            display: none;
-        }
-        #manualUpload {
-            margin-top: 20px;
-            display: none;
-        }
-        textarea {
-            width: 100%;
-            height: 100px;
-            margin-top: 10px;
+
+        .status {
+            margin-top: 15px;
             padding: 10px;
-            border: 1px solid #ccc;
             border-radius: 5px;
-            resize: vertical;
+        }
+
+        .success {
+            background-color: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .error {
+            background-color: #ffebee;
+            color: #d32f2f;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #2196F3;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .file-info {
+            margin: 10px 0;
+            color: #666;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo">
-            <h1>ImageUploader</h1>
+            FileBox
+            <div class="box-icon"></div>
         </div>
         
-        <p>Uploads up to 10 MB are allowed.</p>
+        <div class="info">Uploads up to 200 MB are allowed.</div>
         
-        <div id="uploadArea" class="upload-area">
-            <p class="upload-text">Select or drop files</p>
-            <input type="file" id="fileInput" accept="image/*">
-            <button class="btn" id="selectButton">Select Files</button>
+        <div id="upload-area" class="upload-area">
+            <p>Select or drop files</p>
+            <input type="file" id="file-input" class="hidden">
         </div>
         
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Processing image, please wait...</p>
-        </div>
+        <div id="file-info" class="file-info hidden"></div>
         
-        <img id="imagePreview" class="preview" alt="Preview">
+        <form id="manual-form" action="https://i.rj1.dev/upload" method="POST" enctype="multipart/form-data" target="upload-iframe" class="hidden">
+            <input type="file" id="manual-file-input" name="image">
+            <button type="submit">Upload</button>
+        </form>
+        <iframe id="upload-iframe" name="upload-iframe" class="hidden"></iframe>
         
-        <div id="manualUpload">
-            <p>Due to CORS restrictions, we need to use an alternative method:</p>
-            <p>1. Copy the command below</p>
-            <p>2. Open your terminal and paste the command</p>
-            <p>3. After running, paste the response below</p>
-            
-            <div class="link-container">
-                <input type="text" class="link-input" id="curlCommand" readonly>
-                <button class="copy-btn" id="copyCurlButton">Copy</button>
-            </div>
-            
-            <p>Paste the response here:</p>
-            <textarea id="responseInput"></textarea>
-            <button class="btn" id="processResponseButton">Process Response</button>
-        </div>
+        <button id="direct-upload-btn" class="hidden">Upload Selected File</button>
         
-        <div class="result-container" id="resultContainer">
-            <div class="status" id="status"></div>
-            <div class="link-container">
-                <input type="text" class="link-input" id="linkInput" readonly>
-                <button class="copy-btn" id="copyButton">Copy</button>
+        <div id="status" class="status hidden"></div>
+        
+        <div id="result" class="result hidden">
+            <div class="copy-link">
+                <input type="text" id="result-link" readonly>
+                <button id="copy-btn" class="copy-btn">Copy</button>
             </div>
         </div>
     </div>
     
-    <div class="footer">
-        <p>© 2025 ImageUploader - Simple image hosting</p>
-    </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const uploadArea = document.getElementById('uploadArea');
-            const fileInput = document.getElementById('fileInput');
-            const selectButton = document.getElementById('selectButton');
-            const loading = document.getElementById('loading');
-            const resultContainer = document.getElementById('resultContainer');
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('file-input');
+            const fileInfo = document.getElementById('file-info');
+            const manualForm = document.getElementById('manual-form');
+            const manualFileInput = document.getElementById('manual-file-input');
+            const directUploadBtn = document.getElementById('direct-upload-btn');
             const status = document.getElementById('status');
-            const linkInput = document.getElementById('linkInput');
-            const copyButton = document.getElementById('copyButton');
-            const imagePreview = document.getElementById('imagePreview');
-            const manualUpload = document.getElementById('manualUpload');
-            const curlCommand = document.getElementById('curlCommand');
-            const copyCurlButton = document.getElementById('copyCurlButton');
-            const responseInput = document.getElementById('responseInput');
-            const processResponseButton = document.getElementById('processResponseButton');
+            const result = document.getElementById('result');
+            const resultLink = document.getElementById('result-link');
+            const copyBtn = document.getElementById('copy-btn');
+            const uploadIframe = document.getElementById('upload-iframe');
             
-            // Select file button
-            selectButton.addEventListener('click', function() {
-                fileInput.click();
-            });
+            let selectedFile = null;
             
-            // File input change
-            fileInput.addEventListener('change', function() {
-                if (fileInput.files.length > 0) {
-                    handleFile(fileInput.files[0]);
-                }
-            });
-            
-            // Drag and drop events
+            // Handle drag and drop events
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 uploadArea.addEventListener(eventName, preventDefaults, false);
             });
@@ -255,139 +262,163 @@
             });
             
             function highlight() {
-                uploadArea.classList.add('highlight');
+                uploadArea.classList.add('active');
             }
             
             function unhighlight() {
-                uploadArea.classList.remove('highlight');
+                uploadArea.classList.remove('active');
             }
             
-            uploadArea.addEventListener('drop', function(e) {
+            // Handle file drop
+            uploadArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
                 const dt = e.dataTransfer;
                 const files = dt.files;
                 
-                if (files.length > 0) {
-                    handleFile(files[0]);
+                if (files.length) {
+                    setSelectedFile(files[0]);
+                }
+            }
+            
+            // Handle file selection via click
+            uploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length) {
+                    setSelectedFile(fileInput.files[0]);
                 }
             });
             
-            // Handle the file
-            function handleFile(file) {
-                // Check if file is an image
-                if (!file.type.match('image.*')) {
-                    showStatus('Please select an image file', 'error');
-                    return;
+            directUploadBtn.addEventListener('click', function() {
+                if (selectedFile) {
+                    // Set the file to the manual form input and submit the form
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(selectedFile);
+                    manualFileInput.files = dataTransfer.files;
+                    manualForm.submit();
+                    
+                    showStatus('<div class="loading"></div> Uploading via form submission...', '');
                 }
-                
-                // Show preview
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                    imagePreview.style.display = 'block';
+            });
+            
+            // Listen for messages from the iframe
+            window.addEventListener('message', function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.success) {
+                        showResult(data.direct_url);
+                        showStatus('Upload successful!', 'success');
+                    } else {
+                        showStatus('Upload failed: ' + (data.message || 'Unknown error'), 'error');
+                    }
+                } catch (e) {
+                    // Not a JSON message or other error
+                    console.log('Received non-JSON message from iframe:', event.data);
                 }
-                reader.readAsDataURL(file);
+            });
+            
+            // Handle iframe load
+            uploadIframe.addEventListener('load', function() {
+                try {
+                    const iframeContent = uploadIframe.contentWindow.document.body.textContent;
+                    if (iframeContent) {
+                        try {
+                            const data = JSON.parse(iframeContent);
+                            if (data.success) {
+                                showResult(data.direct_url);
+                                showStatus('Upload successful!', 'success');
+                            } else {
+                                showStatus('Upload failed: ' + (data.message || 'Unknown error'), 'error');
+                            }
+                        } catch (e) {
+                            console.log('Failed to parse JSON from iframe response');
+                        }
+                    }
+                } catch (e) {
+                    // Cross-origin errors might occur here
+                    console.log('Could not access iframe content due to cross-origin policy');
+                }
+            });
+            
+            // Copy button functionality
+            copyBtn.addEventListener('click', function() {
+                resultLink.select();
+                document.execCommand('copy');
+                copyBtn.textContent = 'Copied!';
                 
-                // Try direct upload
-                tryDirectUpload(file);
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy';
+                }, 2000);
+            });
+            
+            function setSelectedFile(file) {
+                selectedFile = file;
+                
+                // Display file info
+                fileInfo.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
+                fileInfo.classList.remove('hidden');
+                
+                // Show upload button
+                directUploadBtn.classList.remove('hidden');
             }
             
-            // Try direct upload (may fail due to CORS)
-            function tryDirectUpload(file) {
-                loading.style.display = 'block';
-                resultContainer.style.display = 'none';
-                manualUpload.style.display = 'none';
-                
-                const formData = new FormData();
-                formData.append('image', file);
-                
-                fetch('https://i.rj1.dev/upload', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    loading.style.display = 'none';
-                    resultContainer.style.display = 'block';
-                    
-                    if (data.success) {
-                        showStatus(data.message || 'Image uploaded successfully', 'success');
-                        linkInput.value = data.direct_url;
-                    } else {
-                        showStatus(data.message || 'Upload failed', 'error');
-                        showManualUploadOption(file);
-                    }
-                })
-                .catch(error => {
-                    loading.style.display = 'none';
-                    // If fetch fails (likely due to CORS), show manual upload option
-                    showManualUploadOption(file);
-                });
+            function formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' bytes';
+                else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+                else return (bytes / 1048576).toFixed(1) + ' MB';
+            }
+            
+            function showStatus(message, type) {
+                status.innerHTML = message;
+                status.className = 'status ' + type;
+                status.classList.remove('hidden');
+            }
+            
+            function showResult(url) {
+                resultLink.value = url;
+                result.classList.remove('hidden');
             }
 
-            // Show manual upload option with cURL command
-            function showManualUploadOption(file) {
-                manualUpload.style.display = 'block';
-                
-                // Generate a unique filename for the cURL command
-                const uniqueFilename = `image_${Date.now()}.${file.name.split('.').pop()}`;
-                
-                // Create the cURL command
-                curlCommand.value = `curl -X POST https://i.rj1.dev/upload -F "image=@/path/to/${uniqueFilename}"`;
-            }
-            
-            // Copy cURL command button
-            copyCurlButton.addEventListener('click', function() {
-                curlCommand.select();
-                document.execCommand('copy');
-                copyCurlButton.textContent = 'Copied!';
-                setTimeout(() => {
-                    copyCurlButton.textContent = 'Copy';
-                }, 2000);
-            });
-            
-            // Process response button
-            processResponseButton.addEventListener('click', function() {
-                const responseText = responseInput.value.trim();
-                
-                if (!responseText) {
-                    showStatus('Please paste the response from the terminal', 'error');
-                    return;
-                }
-                
-                try {
-                    // Try to parse the JSON response
-                    const responseData = JSON.parse(responseText);
-                    
-                    manualUpload.style.display = 'none';
-                    resultContainer.style.display = 'block';
-                    
-                    if (responseData.success) {
-                        showStatus(responseData.message || 'Image uploaded successfully', 'success');
-                        linkInput.value = responseData.direct_url;
-                    } else {
-                        showStatus(responseData.message || 'Upload failed', 'error');
+            // Set up the manual form submission proxy
+            // This script attempts to intercept the JSON response in the hidden iframe
+            const script = document.createElement('script');
+            script.textContent = `
+                // Function to inject into iframe to extract response
+                function injectFrameListener() {
+                    try {
+                        const iframe = document.getElementById('upload-iframe');
+                        if (!iframe) return;
+                        
+                        iframe.onload = function() {
+                            try {
+                                const iframeDocument = iframe.contentWindow.document;
+                                const responseText = iframeDocument.body.textContent;
+                                
+                                if (responseText) {
+                                    try {
+                                        const responseData = JSON.parse(responseText);
+                                        window.parent.postMessage(JSON.stringify(responseData), '*');
+                                    } catch (e) {
+                                        console.error('Failed to parse JSON response', e);
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Error accessing iframe content', e);
+                            }
+                        };
+                    } catch (e) {
+                        console.error('Error setting up iframe listener', e);
                     }
-                } catch (error) {
-                    showStatus('Invalid response format. Please make sure to paste the complete JSON response.', 'error');
                 }
-            });
-            
-            // Show status message
-            function showStatus(message, type) {
-                status.textContent = message;
-                status.className = 'status';
-                status.classList.add(type);
-            }
-            
-            // Copy link button
-            copyButton.addEventListener('click', function() {
-                linkInput.select();
-                document.execCommand('copy');
-                copyButton.textContent = 'Copied!';
-                setTimeout(() => {
-                    copyButton.textContent = 'Copy';
-                }, 2000);
-            });
+                
+                // Call immediately and also after a slight delay to ensure it runs
+                injectFrameListener();
+                setTimeout(injectFrameListener, 500);
+            `;
+            document.head.appendChild(script);
         });
     </script>
 </body>
